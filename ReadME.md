@@ -14,7 +14,7 @@ A FastAPI-based service that extracts metadata, text, and tables from PDF files.
 ## Requirements
 
 - Python >= 3.13
-- Java Runtime (for tabula-py table extraction)
+- Java Runtime (for comelet table extraction)
 - [uv](https://docs.astral.sh/uv/) package manager
 
 ## Installation
@@ -22,8 +22,7 @@ A FastAPI-based service that extracts metadata, text, and tables from PDF files.
 ### 1. Clone the repository
 
 ```bash
-git clone <repository-url>
-cd <repository-folder>
+git clone https://github.com/Harsh0patel/pdf_extractor.git
 ```
 
 ### 2. Install dependencies with uv
@@ -50,6 +49,10 @@ uv run python -c "import fastapi, pymupdf, tabula; print('All dependencies insta
 
 ```bash
 uv run python main.py
+```
+or
+```bash
+fastapi run main.py
 ```
 
 The server will start on `http://0.0.0.0:8000` by default.
