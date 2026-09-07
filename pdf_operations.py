@@ -33,9 +33,15 @@ class PDFExtractor:
                 self.logger.log_error(f"PDF not found: {self.pdf_path}")
             raise FileNotFoundError(f"PDF not found: {self.pdf_path}")
 
-        self.doc = pymupdf.open(self.pdf_path)
+        try:
+            self.doc = pymupdf.open(self.pdf_path)
+        except Exception as exc:
+            raise ValueError(f"Invalid or corrupted PDF: {self.pdf_path}") from exc
+
         if self.doc.needs_pass:
-            self.doc.authenticate(str(self.global_kwargs.get("password", "")))
+            if not self.doc.authenticate(str(self.global_kwargs.get("password", ""))):
+                self.doc.close()
+                raise PermissionError(f"PDF authentication failed: {self.pdf_path}")
 
         if self.logger:
             self.logger.pdf_open_success(str(self.pdf_path))
@@ -155,11 +161,14 @@ class PDFExtractor:
             "text": self.extract_text(),
         }
         if not drop_tables:
-            tables = self.extract_tables(**kwargs)
-            result["tables"] = [
-                {"page_shape": df.shape, "data": df.where(pd.notna(df), None).to_dict(orient="records")}
-                for df in tables
-            ]
+            try:
+                tables = self.extract_tables(**kwargs)
+                result["tables"] = [
+                    {"page_shape": df.shape, "data": df.where(pd.notna(df), None).to_dict(orient="records")}
+                    for df in tables
+                ]
+            except Exception:
+                result["tables"] = []
         return result
 
     # ------------------------------------------------------------------

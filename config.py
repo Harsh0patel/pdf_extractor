@@ -30,12 +30,6 @@ LOG_FILE_ENCODING: str = os.getenv("PDF_SERVICE_LOG_FILE_ENCODING", "utf-8")
 # Log file open mode: "a" for append, "w" for overwrite on startup
 LOG_FILE_MODE: str = os.getenv("PDF_SERVICE_LOG_FILE_MODE", "a")
 
-# Log message format: timestamp | request_id | log_level | source_file | line_number | message
-LOG_FORMAT: str = os.getenv(
-    "PDF_SERVICE_LOG_FORMAT",
-    "%(timestamp)s | %(request_id)s | %(log_level)s | %(source_file)s | %(line_number)s | %(message)s",
-)
-
 # Log timestamp format (strftime pattern)
 LOG_TIMESTAMP_FORMAT: str = os.getenv(
     "PDF_SERVICE_LOG_TIMESTAMP_FORMAT", "%Y-%m-%d %H:%M:%S.%f"

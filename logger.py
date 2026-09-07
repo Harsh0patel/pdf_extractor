@@ -4,7 +4,6 @@ import inspect
 import logging
 import os
 from datetime import datetime, timezone
-from typing import Optional
 
 from config import (
     LOG_DIR,
@@ -27,8 +26,6 @@ class Logger:
     Log format::
         timestamp | request_id | log_level | source_file | line_number | message
     """
-
-
 
     def __init__(self, request_id: str) -> None:
         self.request_id = request_id
@@ -64,23 +61,23 @@ class Logger:
     # ------------------------------------------------------------------
 
     def info(self, message: str) -> None:
-        """Log an informational message → status.log."""
+        """Log an informational message to status.log."""
         self._write(self._status_logger, logging.INFO, message)
 
     def debug(self, message: str) -> None:
-        """Log a debug message → status.log."""
+        """Log a debug message to status.log."""
         self._write(self._status_logger, logging.DEBUG, message)
 
     def error(self, message: str, exc_info: bool = False) -> None:
-        """Log an error → error.log."""
+        """Log an error to error.log."""
         self._write(self._error_logger, logging.ERROR, message, exc_info=exc_info)
 
     def critical(self, message: str, exc_info: bool = False) -> None:
-        """Log a critical error → error.log."""
+        """Log a critical error to error.log."""
         self._write(self._error_logger, logging.CRITICAL, message, exc_info=exc_info)
 
     def exception(self, message: str) -> None:
-        """Convenience wrapper: logs ERROR with traceback → error.log."""
+        """Convenience wrapper: logs ERROR with traceback to error.log."""
         self._write(self._error_logger, logging.ERROR, message, exc_info=True)
 
     # ------------------------------------------------------------------
@@ -125,15 +122,17 @@ class Logger:
             logger.removeHandler(handler)
             handler.close()
 
-    @staticmethod
     def _write(
-        logger: logging.Logger,
+        self,
+        py_logger: logging.Logger,
         level: int,
         message: str,
         *,
         exc_info: bool = False,
     ) -> None:
-        timestamp = datetime.now(timezone.utc).strftime(LOG_TIMESTAMP_FORMAT)[:-3] if LOG_TIMESTAMP_FORMAT.endswith("%f") else datetime.now(timezone.utc).strftime(LOG_TIMESTAMP_FORMAT)
+        timestamp = datetime.now(timezone.utc).strftime(LOG_TIMESTAMP_FORMAT)
+        if LOG_TIMESTAMP_FORMAT.endswith("%f"):
+            timestamp = timestamp[:-3]
         level_name = logging.getLevelName(level)
 
         # Walk the stack to find the caller's file and line number.
@@ -141,7 +140,6 @@ class Logger:
         line_number = "-"
         frame = inspect.currentframe()
         if frame is not None:
-            # Go up until we leave this module.
             caller_frame = frame.f_back
             while caller_frame is not None:
                 caller_file = caller_frame.f_code.co_filename
@@ -151,19 +149,8 @@ class Logger:
                     break
                 caller_frame = caller_frame.f_back
 
-        # Request ID
-        request_id = "SYSTEM"
-
-        # Detect request_id from the Logger instance via a hack:
-        # we store it on the frame locals — but that's fragile.
-        # Instead, we extract it from the logger name.
-        if "." in getattr(logger, "name", ""):
-            candidate = logger.name.split(".", 1)[-1]
-            if len(candidate) == 36 and candidate.count("-") == 4:  # UUID-like
-                request_id = candidate
-
-        formatted = f"{timestamp} | {request_id} | {level_name} | {source_file} | {line_number} | {message}"
-        logger.log(level, formatted, exc_info=exc_info)
+        formatted = f"{timestamp} | {self.request_id} | {level_name} | {source_file} | {line_number} | {message}"
+        py_logger.log(level, formatted, exc_info=exc_info)
 
 
 class _LevelFilter(logging.Filter):
