@@ -25,7 +25,7 @@ class Logger:
 
     def __init__(self, request_id: str) -> None:
         self.request_id = request_id
-        self._ensure_log_dir()
+        self._ensure_log_files()
 
         # --- status logger (INFO + DEBUG) -----------------------------------
         self._status_logger = logging.getLogger(f"status.{request_id}")
@@ -105,6 +105,14 @@ class Logger:
     @staticmethod
     def _ensure_log_dir() -> None:
         LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+    @staticmethod
+    def _ensure_log_files() -> None:
+        """Create log files if they don't exist."""
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        for log_file in (LOG_STATUS_FILE, LOG_ERROR_FILE):
+            if not log_file.exists():
+                log_file.touch(mode=0o644)
 
     @staticmethod
     def _remove_handlers(logger: logging.Logger) -> None:

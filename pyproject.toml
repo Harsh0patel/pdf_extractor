@@ -4,6 +4,7 @@ version = "0.1.0"
 requires-python = ">=3.13"
 dependencies = [
     "camelot-py[base]>=2.0.0",
+    "tabula-py>=2.10.0",
     "fastapi[standard]>=0.141.1",
     "pandas>=3.0.5",
     "pandas-stubs~=3.0.5",

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
+import camelot
 import pandas as pd
 import pymupdf
 
@@ -73,42 +75,55 @@ class PDFExtractor:
         return [page.get_text(**kwargs) for page in self.doc]
 
     def extract_tables_lattice(self, *args: Any, **kwargs: Any) -> list[pd.DataFrame]:
-        """Extract tables using lattice method (line-drawn tables).
-
-        TODO: Replace with:
-            import camelot
-            tables = camelot.read_pdf(str(self.pdf_path), flavor='lattice', **kwargs)
-            return [df.df for df in tables]
-        """
-        raise NotImplementedError("Camelot not implemented yet")
+        """Extract tables using camelot's lattice method (line-drawn tables)."""
+        kwargs.setdefault("pages", "all")
+        tables = camelot.read_pdf(str(self.pdf_path), flavor='lattice', **kwargs)
+        return [table.df for table in tables]
 
     def extract_tables_stream(self, *args: Any, **kwargs: Any) -> list[pd.DataFrame]:
-        """Extract tables using stream method (whitespace-aligned tables).
-
-        TODO: Replace with:
-            import camelot
-            tables = camelot.read_pdf(str(self.pdf_path), flavor='stream', **kwargs)
-            return [df.df for df in tables]
-        """
-        raise NotImplementedError("Camelot not implemented yet")
+        """Extract tables using camelot's stream method (whitespace-aligned tables)."""
+        kwargs.setdefault("pages", "all")
+        tables = camelot.read_pdf(str(self.pdf_path), flavor='stream', **kwargs)
+        return [table.df for table in tables]
 
     def extract_tables(self, *args: Any, **kwargs: Any) -> list[pd.DataFrame]:
         """Extract tables with BOTH methods and merge the results.
 
         Runs lattice and stream, drops empty frames and removes duplicates
         (same shape and identical cell values) so all data is covered once.
-
-        TODO: Replace with:
-            import camelot
-            tables = camelot.read_pdf(str(self.pdf_path), flavor='lattice', **kwargs)
-            all_frames: list[pd.DataFrame] = [df.df for df in tables]
-            try:
-                stream = camelot.read_pdf(str(self.pdf_path), flavor='stream', **kwargs)
-                all_frames.extend([df.df for df in stream])
-            except Exception:
-                pass
         """
-        raise NotImplementedError("Camelot not implemented yet")
+        merged: list[pd.DataFrame] = []
+        seen: set[tuple] = set()
+        all_frames: list[pd.DataFrame] = []
+
+        # Try lattice, skip if it fails
+        try:
+            all_frames.extend(self.extract_tables_lattice(*args, **kwargs))
+        except Exception as e:
+            if self.logger:
+                self.logger.log_error(f"Lattice extraction failed: {e}")
+
+        # Always try stream
+        try:
+            all_frames.extend(self.extract_tables_stream(*args, **kwargs))
+        except Exception as e:
+            if self.logger:
+                self.logger.log_error(f"Stream extraction failed: {e}")
+
+        # Merge - skip tiny tables and exact duplicates
+        for df in all_frames:
+            # Skip tiny tables (likely false positives)
+            if df.shape[0] < 2 or df.shape[1] < 2:
+                continue
+            if df.empty:
+                continue
+            # Create a hash key from cell values for dedup
+            key = tuple(map(tuple, df.fillna("").astype(str).values.tolist()))
+            if key not in seen:
+                seen.add(key)
+                merged.append(df)
+
+        return merged
 
     def extract_all(self, **kwargs: Any) -> dict[str, Any]:
         """Extract metadata, text and tables in one call.
@@ -125,14 +140,11 @@ class PDFExtractor:
             "text": self.extract_text(),
         }
         if not drop_tables:
-            try:
-                tables = self.extract_tables(**kwargs)
-                result["tables"] = [
-                    {"page_shape": df.shape, "data": df.where(pd.notna(df), None).to_dict(orient="records")}
-                    for df in tables
-                ]
-            except Exception:
-                result["tables"] = []
+            tables = self.extract_tables(**kwargs)
+            result["tables"] = [
+                {"page_shape": df.shape, "data": df.where(pd.notna(df), None).to_dict(orient="records")}
+                for df in tables
+            ]
         return result
 
     def to_json(self, data: dict[str, Any], path: str | Path | None = None) -> str:
