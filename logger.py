@@ -18,11 +18,7 @@ from config import (
 
 
 class Logger:
-    """Custom logger that writes to two separate files:
-
-    - ``logs/status.log`` — INFO and DEBUG level messages (everything except errors).
-    - ``logs/error.log`` — ERROR and CRITICAL messages (errors and exceptions).
-
+    """
     Log format::
         timestamp | request_id | log_level | source_file | line_number | message
     """
@@ -56,9 +52,7 @@ class Logger:
         error_handler.setFormatter(logging.Formatter("%(message)s"))
         self._error_logger.addHandler(error_handler)
 
-    # ------------------------------------------------------------------
-    # Public helpers
-    # ------------------------------------------------------------------
+
 
     def info(self, message: str) -> None:
         """Log an informational message to status.log."""
@@ -80,9 +74,7 @@ class Logger:
         """Convenience wrapper: logs ERROR with traceback to error.log."""
         self._write(self._error_logger, logging.ERROR, message, exc_info=True)
 
-    # ------------------------------------------------------------------
-    # High-level semantic methods
-    # ------------------------------------------------------------------
+
 
     def request_received(self, endpoint: str, method: str = "POST") -> None:
         self.info(f"REQUEST_RECEIVED | {method} {endpoint}")
@@ -108,9 +100,7 @@ class Logger:
     def log_exception(self, message: str) -> None:
         self.exception(message)
 
-    # ------------------------------------------------------------------
-    # Internals
-    # ------------------------------------------------------------------
+
 
     @staticmethod
     def _ensure_log_dir() -> None:

@@ -6,7 +6,6 @@ from typing import Any
 
 import pandas as pd
 import pymupdf
-import tabula
 
 
 class PDFExtractor:
@@ -17,8 +16,7 @@ class PDFExtractor:
     """
 
     def __init__(self, pdf_path: str | Path, logger: Any = None, **kwargs: Any) -> None:
-        """Open a PDF and keep optional global options.
-
+        """
         Args:
             pdf_path: Path to the PDF file.
             logger: Optional Logger instance for logging.
@@ -46,9 +44,6 @@ class PDFExtractor:
         if self.logger:
             self.logger.pdf_open_success(str(self.pdf_path))
 
-    # ------------------------------------------------------------------
-    # Metadata
-    # ------------------------------------------------------------------
     def extract_metadata(self) -> dict[str, Any]:
         """Return document metadata plus page count and page sizes."""
         meta: dict[str, Any] = dict(self.doc.metadata or {})
@@ -59,9 +54,6 @@ class PDFExtractor:
         ]
         return meta
 
-    # ------------------------------------------------------------------
-    # Text
-    # ------------------------------------------------------------------
     def extract_text(self, *args: Any, **kwargs: Any) -> str:
         """Extract all text from the document.
 
@@ -80,32 +72,25 @@ class PDFExtractor:
         """Extract text as a list, one entry per page (``**kwargs`` forwarded to PyMuPDF)."""
         return [page.get_text(**kwargs) for page in self.doc]
 
-    # ------------------------------------------------------------------
-    # Tables (tabula-py)
-    # ------------------------------------------------------------------
     def extract_tables_lattice(self, *args: Any, **kwargs: Any) -> list[pd.DataFrame]:
-        """Extract tables using tabula's LATTICE method (line-drawn tables).
+        """Extract tables using lattice method (line-drawn tables).
 
-        Args:
-            *args: Extra positional args forwarded to ``tabula.read_pdf``.
-            **kwargs: Options forwarded to ``tabula.read_pdf``
-                (e.g. ``area``, ``columns``, ``multiple_tables=True``).
+        TODO: Replace with:
+            import camelot
+            tables = camelot.read_pdf(str(self.pdf_path), flavor='lattice', **kwargs)
+            return [df.df for df in tables]
         """
-        kwargs.setdefault("lattice", True)
-        kwargs.setdefault("multiple_tables", True)
-        return self._read_tables(*args, **kwargs)
+        raise NotImplementedError("Camelot not implemented yet")
 
     def extract_tables_stream(self, *args: Any, **kwargs: Any) -> list[pd.DataFrame]:
-        """Extract tables using tabula's STREAM method (whitespace-aligned tables).
+        """Extract tables using stream method (whitespace-aligned tables).
 
-        Args:
-            *args: Extra positional args forwarded to ``tabula.read_pdf``.
-            **kwargs: Options forwarded to ``tabula.read_pdf``
-                (e.g. ``area``, ``columns``, ``multiple_tables=True``).
+        TODO: Replace with:
+            import camelot
+            tables = camelot.read_pdf(str(self.pdf_path), flavor='stream', **kwargs)
+            return [df.df for df in tables]
         """
-        kwargs.setdefault("stream", True)
-        kwargs.setdefault("multiple_tables", True)
-        return self._read_tables(*args, **kwargs)
+        raise NotImplementedError("Camelot not implemented yet")
 
     def extract_tables(self, *args: Any, **kwargs: Any) -> list[pd.DataFrame]:
         """Extract tables with BOTH methods and merge the results.
@@ -113,39 +98,18 @@ class PDFExtractor:
         Runs lattice and stream, drops empty frames and removes duplicates
         (same shape and identical cell values) so all data is covered once.
 
-        Args:
-            *args: Extra positional args forwarded to ``tabula.read_pdf``.
-            **kwargs: Options forwarded to both tabula calls.
+        TODO: Replace with:
+            import camelot
+            tables = camelot.read_pdf(str(self.pdf_path), flavor='lattice', **kwargs)
+            all_frames: list[pd.DataFrame] = [df.df for df in tables]
+            try:
+                stream = camelot.read_pdf(str(self.pdf_path), flavor='stream', **kwargs)
+                all_frames.extend([df.df for df in stream])
+            except Exception:
+                pass
         """
-        merged: list[pd.DataFrame] = []
-        seen: set[tuple] = set()
-        for frames in (self.extract_tables_lattice(*args, **kwargs),
-                       self.extract_tables_stream(*args, **kwargs)):
-            for df in frames:
-                if df.empty:
-                    continue
-                key = (df.shape, tuple(map(tuple, df.fillna("").astype(str).values)))
-                if key in seen:
-                    continue
-                seen.add(key)
-                merged.append(df)
-        return merged
+        raise NotImplementedError("Camelot not implemented yet")
 
-    def _read_tables(self, *args: Any, **kwargs: Any) -> list[pd.DataFrame]:
-        """Shared tabula.read_pdf call with global defaults applied."""
-        options = {**self.global_kwargs, **kwargs}
-        options.setdefault("pages", "all")  # tabula otherwise reads page 1 only
-        options.pop("password", None)  # tabula uses java_options for that
-        frames = tabula.read_pdf(str(self.pdf_path), *args, **options)
-        if frames is None:
-            return []
-        if isinstance(frames, pd.DataFrame):  # single-table result
-            return [frames]
-        return list(frames)
-
-    # ------------------------------------------------------------------
-    # All-in-one
-    # ------------------------------------------------------------------
     def extract_all(self, **kwargs: Any) -> dict[str, Any]:
         """Extract metadata, text and tables in one call.
 
@@ -171,9 +135,6 @@ class PDFExtractor:
                 result["tables"] = []
         return result
 
-    # ------------------------------------------------------------------
-    # Export helpers
-    # ------------------------------------------------------------------
     def to_json(self, data: dict[str, Any], path: str | Path | None = None) -> str:
         """Serialize extraction results to JSON (optionally write to ``path``)."""
         text = json.dumps(data, ensure_ascii=False, indent=2, default=str)
