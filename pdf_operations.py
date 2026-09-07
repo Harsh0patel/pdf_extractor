@@ -16,22 +16,29 @@ class PDFExtractor:
     and merged so all detectable data is returned.
     """
 
-    def __init__(self, pdf_path: str | Path, **kwargs: Any) -> None:
+    def __init__(self, pdf_path: str | Path, logger: Any = None, **kwargs: Any) -> None:
         """Open a PDF and keep optional global options.
 
         Args:
             pdf_path: Path to the PDF file.
+            logger: Optional Logger instance for logging.
             **kwargs: Global defaults applied to every extraction call,
                 e.g. ``pages="all"``, ``password="secret"``.
         """
         self.pdf_path = Path(pdf_path)
+        self.logger = logger
         self.global_kwargs: dict[str, Any] = kwargs
         if not self.pdf_path.exists():
+            if self.logger:
+                self.logger.log_error(f"PDF not found: {self.pdf_path}")
             raise FileNotFoundError(f"PDF not found: {self.pdf_path}")
 
         self.doc = pymupdf.open(self.pdf_path)
         if self.doc.needs_pass:
             self.doc.authenticate(str(self.global_kwargs.get("password", "")))
+
+        if self.logger:
+            self.logger.pdf_open_success(str(self.pdf_path))
 
     # ------------------------------------------------------------------
     # Metadata

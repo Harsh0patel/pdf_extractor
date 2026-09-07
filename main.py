@@ -5,9 +5,11 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, field_validator
 
+from config import APP_TITLE, HOST, PORT
+from logger import Logger
 from pdf_operations import PDFExtractor
 
-app = FastAPI(title="PDF Processing Service")
+app = FastAPI(title=APP_TITLE)
 
 
 class ProcessPDFRequest(BaseModel):
@@ -42,23 +44,33 @@ def process_pdf(request: ProcessPDFRequest) -> dict:
         500: extraction failed.
     """
     request_id = str(uuid4())
+    logger = Logger(request_id)
     pdf_path = Path(request.pdf_path)
 
+    logger.request_received("/process-pdf", "POST")
+    logger.file_path_validated(str(pdf_path))
+
     if not pdf_path.exists():
+        logger.log_error(f"PDF file not found: {pdf_path}")
         raise HTTPException(status_code=404, detail=f"PDF file not found: {pdf_path}")
     if not pdf_path.is_file():
+        logger.log_error(f"pdf_path is not a file: {pdf_path}")
         raise HTTPException(status_code=400, detail=f"pdf_path is not a file: {pdf_path}")
 
+    logger.task_started("pdf_extraction")
     try:
-        with PDFExtractor(pdf_path) as extractor:
+        with PDFExtractor(pdf_path, logger=logger) as extractor:
             data = extractor.extract_all()
     except FileNotFoundError as exc:
+        logger.log_exception(f"File not found during extraction: {exc}")
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except Exception as exc:  # noqa: BLE001 - surface any extraction failure to the client
+        logger.log_exception(f"PDF extraction failed: {exc}")
         raise HTTPException(status_code=500, detail=f"PDF extraction failed: {exc}") from exc
 
+    logger.task_completed("pdf_extraction")
+    logger.response_sent(200)
     return {"request_id": request_id, "status": "success", "data": data}
 
-
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host=HOST, port=PORT)
