@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-import json
-import sys
 from pathlib import Path
 from typing import Any
-
 import camelot
 import pandas as pd
 import pymupdf
@@ -31,7 +28,7 @@ class PDFExtractor:
         if not self.pdf_path.exists():
             if self.logger:
                 self.logger.log_error(f"PDF not found: {self.pdf_path}")
-            raise FileNotFoundError(f"PDF not found: {self.pdf_path}")
+                raise FileNotFoundError(f"PDF not found: {self.pdf_path}")
 
         try:
             self.doc = pymupdf.open(self.pdf_path)
@@ -147,30 +144,8 @@ class PDFExtractor:
             ]
         return result
 
-    def to_json(self, data: dict[str, Any], path: str | Path | None = None) -> str:
-        """Serialize extraction results to JSON (optionally write to ``path``)."""
-        text = json.dumps(data, ensure_ascii=False, indent=2, default=str)
-        if path is not None:
-            Path(path).write_text(text, encoding="utf-8")
-        return text
-
-    def tables_to_csv(self, tables: list[pd.DataFrame], out_dir: str | Path = ".") -> list[Path]:
-        """Write each extracted table to its own CSV file; returns the file paths."""
-        out_dir = Path(out_dir)
-        out_dir.mkdir(parents=True, exist_ok=True)
-        paths = []
-        for i, df in enumerate(tables, start=1):
-            p = out_dir / f"{self.pdf_path.stem}_table_{i}.csv"
-            df.to_csv(p, index=False)
-            paths.append(p)
-        return paths
-
-    def close(self) -> None:
-        """Close the underlying PDF document."""
-        self.doc.close()
-
     def __enter__(self) -> "PDFExtractor":
         return self
 
     def __exit__(self, *exc_info: Any) -> None:
-        self.close()
+        self.doc.close()

@@ -903,6 +903,7 @@ dependencies = [
     { name = "pandas-stubs" },
     { name = "pydantic" },
     { name = "pymupdf" },
+    { name = "python-dotenv" },
     { name = "tabula-py" },
     { name = "uvicorn" },
 ]
@@ -915,6 +916,7 @@ requires-dist = [
     { name = "pandas-stubs", specifier = "~=3.0.5" },
     { name = "pydantic", specifier = ">=2.13.5" },
     { name = "pymupdf", specifier = ">=1.28.2" },
+    { name = "python-dotenv", specifier = ">=1.2.3" },
     { name = "tabula-py", specifier = ">=2.10.0" },
     { name = "uvicorn", specifier = ">=0.52.4" },
 ]

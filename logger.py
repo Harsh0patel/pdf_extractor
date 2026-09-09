@@ -4,6 +4,7 @@ import inspect
 import logging
 import os
 from datetime import datetime, timezone
+from pathlib import Path
 
 from config import (
     LOG_DIR,
@@ -24,34 +25,29 @@ class Logger:
     """
 
     def __init__(self, request_id: str) -> None:
+        """
+        Args:
+            request_id: ID of the request, taken from the endpoint.
+                The endpoint decides it (client-supplied or UUID4).
+        """
         self.request_id = request_id
         self._ensure_log_files()
 
         # --- status logger (INFO + DEBUG) -----------------------------------
-        self._status_logger = logging.getLogger(f"status.{request_id}")
-        self._status_logger.setLevel(getattr(logging, LOG_STATUS_LEVEL, logging.DEBUG))
-        self._status_logger.propagate = False
-        self._remove_handlers(self._status_logger)
-        status_handler = logging.FileHandler(
-            LOG_STATUS_FILE, mode=LOG_FILE_MODE, encoding=LOG_FILE_ENCODING
+        self._status_logger = self._setup_logger(
+            name=f"status.{self.request_id}",
+            log_file=LOG_STATUS_FILE,
+            level=LOG_STATUS_LEVEL,
+            max_level=logging.INFO,  # cap at INFO for status
         )
-        status_handler.setLevel(getattr(logging, LOG_STATUS_LEVEL, logging.DEBUG))
-        status_handler.addFilter(_LevelFilter(max_level=logging.INFO))
-        status_handler.setFormatter(logging.Formatter("%(message)s"))
-        self._status_logger.addHandler(status_handler)
 
         # --- error logger (ERROR + CRITICAL) --------------------------------
-        self._error_logger = logging.getLogger(f"error.{request_id}")
-        self._error_logger.setLevel(getattr(logging, LOG_ERROR_LEVEL, logging.ERROR))
-        self._error_logger.propagate = False
-        self._remove_handlers(self._error_logger)
-        error_handler = logging.FileHandler(
-            LOG_ERROR_FILE, mode=LOG_FILE_MODE, encoding=LOG_FILE_ENCODING
+        self._error_logger = self._setup_logger(
+            name=f"error.{self.request_id}",
+            log_file=LOG_ERROR_FILE,
+            level=LOG_ERROR_LEVEL,
+            max_level=None,  # no cap for errors
         )
-        error_handler.setLevel(getattr(logging, LOG_ERROR_LEVEL, logging.ERROR))
-        error_handler.setFormatter(logging.Formatter("%(message)s"))
-        self._error_logger.addHandler(error_handler)
-
 
 
     def info(self, message: str) -> None:
@@ -100,11 +96,39 @@ class Logger:
     def log_exception(self, message: str) -> None:
         self.exception(message)
 
+    def task_failed(self, task_name: str) -> None:
+        self.info(f"TASK_FAILED | {task_name}")
+
+    def close(self) -> None:
+        """Close and remove all file handlers (call when the request is done)."""
+        for py_logger in (self._status_logger, self._error_logger):
+            self._remove_handlers(py_logger)
 
 
-    @staticmethod
-    def _ensure_log_dir() -> None:
-        LOG_DIR.mkdir(parents=True, exist_ok=True)
+    def _setup_logger(
+            self,
+            name: str,
+            log_file: Path,
+            level: str,
+            max_level: int | None = None,
+    ) -> logging.Logger:
+        logger = logging.getLogger(name)
+        logger.setLevel(getattr(logging, level, logging.DEBUG))
+        logger.propagate = False
+        self._remove_handlers(logger)
+
+        handler = logging.FileHandler(
+            log_file, mode=LOG_FILE_MODE, encoding=LOG_FILE_ENCODING
+        )
+        handler.setLevel(getattr(logging, level, logging.DEBUG))
+
+        # only add max level filter if specified
+        if max_level is not None:
+            handler.addFilter(_LevelFilter(max_level=max_level))
+
+        handler.setFormatter(logging.Formatter("%(message)s"))
+        logger.addHandler(handler)
+        return logger
 
     @staticmethod
     def _ensure_log_files() -> None:
@@ -112,7 +136,7 @@ class Logger:
         LOG_DIR.mkdir(parents=True, exist_ok=True)
         for log_file in (LOG_STATUS_FILE, LOG_ERROR_FILE):
             if not log_file.exists():
-                log_file.touch(mode=0o644)
+                log_file.touch()
 
     @staticmethod
     def _remove_handlers(logger: logging.Logger) -> None:
@@ -129,8 +153,6 @@ class Logger:
         exc_info: bool = False,
     ) -> None:
         timestamp = datetime.now(timezone.utc).strftime(LOG_TIMESTAMP_FORMAT)
-        if LOG_TIMESTAMP_FORMAT.endswith("%f"):
-            timestamp = timestamp[:-3]
         level_name = logging.getLevelName(level)
 
         # Walk the stack to find the caller's file and line number.

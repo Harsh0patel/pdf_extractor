@@ -1,6 +1,9 @@
 from __future__ import annotations
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Server settings
 APP_TITLE: str = "PDF Processing Service"
@@ -26,7 +29,7 @@ LOG_FILE_MODE: str = os.getenv("PDF_SERVICE_LOG_FILE_MODE", "a")
 
 # Log timestamp format (strftime pattern)
 LOG_TIMESTAMP_FORMAT: str = os.getenv(
-    "PDF_SERVICE_LOG_TIMESTAMP_FORMAT", "%Y-%m-%d %H:%M:%S.%f"
+    "PDF_SERVICE_LOG_TIMESTAMP_FORMAT", "%Y-%m-%d %H:%M:%S"
 )
 
 # PDF extraction settings
