@@ -17,10 +17,6 @@ ERROR_LOG_FILE: str = os.getenv("PDF_SERVICE_ERROR_LOG_FILE", "error.log")
 LOG_STATUS_FILE: Path = LOG_DIR / STATUS_LOG_FILE
 LOG_ERROR_FILE: Path = LOG_DIR / ERROR_LOG_FILE
 
-# Log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
-LOG_STATUS_LEVEL: str = os.getenv("PDF_SERVICE_LOG_STATUS_LEVEL", "DEBUG")
-LOG_ERROR_LEVEL: str = os.getenv("PDF_SERVICE_LOG_ERROR_LEVEL", "ERROR")
-
 # Log file encoding
 LOG_FILE_ENCODING: str = os.getenv("PDF_SERVICE_LOG_FILE_ENCODING", "utf-8")
 
@@ -31,6 +27,9 @@ LOG_FILE_MODE: str = os.getenv("PDF_SERVICE_LOG_FILE_MODE", "a")
 LOG_TIMESTAMP_FORMAT: str = os.getenv(
     "PDF_SERVICE_LOG_TIMESTAMP_FORMAT", "%Y-%m-%d %H:%M:%S"
 )
+
+# Output directory for extracted tables
+OUTPUT_DIR: Path = Path(os.getenv("PDF_SERVICE_OUTPUT_DIR", "outputs"))
 
 # PDF extraction settings
 DEFAULT_TABLE_PAGES: str = os.getenv("PDF_SERVICE_TABLE_PAGES", "all")
