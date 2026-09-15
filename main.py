@@ -1,7 +1,6 @@
 from pathlib import Path
 from uuid import uuid4
 
-import pandas as pd
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, field_validator
@@ -88,7 +87,7 @@ def process_pdf(request: ProcessPDFRequest) -> dict:
                 data = extractor.extract_all()
                 if data.get("tables"):
                     saved_files = extractor.save_tables_to_json(
-                        [pd.DataFrame(t["data"]) for t in data["tables"]]
+                        [item for item in extractor.extract_tables() if item.get("nested") is not None]
                     )
                     data["tables_saved_to"] = [str(p) for p in saved_files]
         except FileNotFoundError as exc:
