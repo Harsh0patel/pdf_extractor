@@ -1,0 +1,19 @@
+{
+  "Question": {
+    "Are you a UK citizen?": {
+      "Respondent A": "",
+      "Respondent B": "",
+      "Respondent C": ""
+    },
+    "Are you currently employed?": {
+      "Respondent A": "",
+      "Respondent B": "",
+      "Respondent C": ""
+    },
+    "Do you have a driving licence?": {
+      "Respondent A": "",
+      "Respondent B": "",
+      "Respondent C": ""
+    }
+  }
+}

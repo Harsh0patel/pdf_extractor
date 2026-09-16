@@ -1,0 +1,62 @@
+{
+  "2010": {
+    "Highest average": {
+      "South America": 523.6,
+      "Asia": 467.4,
+      "Africa": 405.0,
+      "Australia": 340.5
+    },
+    "Highest in 24 hours": {
+      "South America": 73.1,
+      "Asia": 54.1,
+      "Africa": 27.2,
+      "Australia": 66.3
+    },
+    "Highest in 12 hours": {
+      "South America": 42.4,
+      "Asia": 30.1,
+      "Africa": 15.9,
+      "Australia": 40.3
+    }
+  },
+  "2009": {
+    "Highest average": {
+      "South America": 487.7,
+      "Asia": 453.6,
+      "Africa": 398.7,
+      "Australia": 356
+    },
+    "Highest in 24 hours": {
+      "South America": 67.2,
+      "Asia": 53.2,
+      "Africa": 44.3,
+      "Australia": 53.8
+    },
+    "Highest in 12 hours": {
+      "South America": 34.7,
+      "Asia": 34.1,
+      "Africa": 29.8,
+      "Australia": 31.0
+    }
+  },
+  "2008": {
+    "Highest average": {
+      "South America": 496.7,
+      "Asia": 444.3,
+      "Africa": 502.1,
+      "Australia": 399.6
+    },
+    "Highest in 24 hours": {
+      "South America": 44.2,
+      "Asia": 56.7,
+      "Africa": 32.1,
+      "Australia": 63.2
+    },
+    "Highest in 12 hours": {
+      "South America": 30.1,
+      "Asia": 32.7,
+      "Africa": 21.9,
+      "Australia": 40.2
+    }
+  }
+}

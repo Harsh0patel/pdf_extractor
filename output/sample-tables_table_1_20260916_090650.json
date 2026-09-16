@@ -1,0 +1,12 @@
+{
+  "Column header (TH)": {
+    "Row header (TH)": {
+      "Column header (TH)": "Data cell (TD)",
+      "Column header (TH) [2]": "Data cell (TD)"
+    },
+    "Row header(TH)": {
+      "Column header (TH)": "Data cell (TD)",
+      "Column header (TH) [2]": "Data cell (TD)"
+    }
+  }
+}
